@@ -30,19 +30,17 @@ echo "${OPENJPEG_VERSION}.${build}" > "${stage}/VERSION.txt"
 
 pushd "$OPENJPEG_SOURCE_DIR"
     case "$AUTOBUILD_PLATFORM" in
-        "windows")
+        windows*)
             load_vsvars
 
-            cmake . -G"Visual Studio 12" -DCMAKE_INSTALL_PREFIX=$stage
+            if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
+            then cmake . -G "Visual Studio 12" -DCMAKE_INSTALL_PREFIX=$stage
+            else cmake . -G "Visual Studio 12 Win64" -DCMAKE_INSTALL_PREFIX=$stage
+            fi
 
-            build_sln "OPENJPEG.sln" "Release|Win32"
-            build_sln "OPENJPEG.sln" "Debug|Win32"
-            mkdir -p "$stage/lib/debug"
+            build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "openjpeg"
             mkdir -p "$stage/lib/release"
             cp bin/Release/openjpeg{.dll,.lib} "$stage/lib/release"
-            cp bin/Debug/openjpeg.dll "$stage/lib/debug/openjpegd.dll"
-            cp bin/Debug/openjpeg.lib "$stage/lib/debug/openjpegd.lib"
-            cp bin/Debug/openjpeg.pdb "$stage/lib/debug/openjpegd.pdb"
             mkdir -p "$stage/include/openjpeg"
             cp libopenjpeg/openjpeg.h "$stage/include/openjpeg"
         ;;
