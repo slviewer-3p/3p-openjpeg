@@ -33,10 +33,7 @@ pushd "$OPENJPEG_SOURCE_DIR"
         windows*)
             load_vsvars
 
-            if [ "$AUTOBUILD_ADDRSIZE" = 32 ]
-            then cmake . -G "Visual Studio 12" -DCMAKE_INSTALL_PREFIX=$stage
-            else cmake . -G "Visual Studio 12 Win64" -DCMAKE_INSTALL_PREFIX=$stage
-            fi
+            cmake . -G "$AUTOBUILD_WIN_CMAKE_GEN" -DCMAKE_INSTALL_PREFIX=$stage
 
             build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "openjpeg"
             mkdir -p "$stage/lib/release"
