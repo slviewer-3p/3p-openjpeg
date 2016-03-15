@@ -43,11 +43,13 @@ pushd "$OPENJPEG_SOURCE_DIR"
             cmake . -G "$AUTOBUILD_WIN_CMAKE_GEN" -DCMAKE_INSTALL_PREFIX=$stage \
                     -DCMAKE_C_FLAGS="$LL_BUILD"
 
-            build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "openjpeg"
+            build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "openjp2"
             mkdir -p "$stage/lib/release"
+
             cp bin/Release/openjp2{.dll,.lib} "$stage/lib/release"
-            mkdir -p "$stage/include/openjp2"
-            cp libopenjp2/openjpeg.h "$stage/include/openjp2"
+            mkdir -p "$stage/include/openjpeg"
+
+            cp src/lib/openjp2/openjpeg.h "$stage/include/openjpeg/"
         ;;
 
         darwin*)
