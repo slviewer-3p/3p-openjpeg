@@ -7,8 +7,8 @@ set -x
 # make errors fatal
 set -e
 
-OPENJPEG_VERSION="1.4"
-OPENJPEG_SOURCE_DIR="openjpeg_v1_4_sources_r697"
+OPENJPEG_VERSION="2.0.0"
+OPENJPEG_SOURCE_DIR="openjpeg"
 
 if [ -z "$AUTOBUILD" ] ; then 
     fail
@@ -37,26 +37,41 @@ pushd "$OPENJPEG_SOURCE_DIR"
 
             build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "openjpeg"
             mkdir -p "$stage/lib/release"
-            cp bin/Release/openjpeg{.dll,.lib} "$stage/lib/release"
-            mkdir -p "$stage/include/openjpeg"
-            cp libopenjpeg/openjpeg.h "$stage/include/openjpeg"
+            cp bin/Release/openjp2{.dll,.lib} "$stage/lib/release"
+            mkdir -p "$stage/include/openjp2"
+            cp libopenjp2/openjpeg.h "$stage/include/openjp2"
         ;;
+
         "darwin")
-	    cmake . -GXcode -D'CMAKE_OSX_ARCHITECTURES:STRING=i386;ppc' -D'BUILD_SHARED_LIBS:bool=off' -D'BUILD_CODEC:bool=off' -DCMAKE_INSTALL_PREFIX=$stage
+            cmake . -GXcode -D'CMAKE_OSX_ARCHITECTURES:STRING=i386;ppc' -D'BUILD_SHARED_LIBS:bool=off' -D'BUILD_CODEC:bool=off' -DCMAKE_INSTALL_PREFIX=$stage
 	    xcodebuild -configuration Release -target openjpeg -project openjpeg.xcodeproj
-	    xcodebuild -configuration Release -target install -project openjpeg.xcodeproj
+            xcodebuild -configuration Release -target install -project openjpeg.xcodeproj
             mkdir -p "$stage/lib/release"
-	    cp "$stage/lib/libopenjpeg.a" "$stage/lib/release/libopenjpeg.a"
-            mkdir -p "$stage/include/openjpeg"
-	    cp "$stage/include/openjpeg-$OPENJPEG_VERSION/openjpeg.h" "$stage/include/openjpeg"
-	  
+            cp "$stage/lib/libopenjp2.a" "$stage/lib/release/libopenjp2.a"
+            mkdir -p "$stage/include/openjp2"
+            cp "$stage/include/openjp2/openjpeg.h" "$stage/include/openjp2"
         ;;
+
         "linux")
-            CFLAGS="-m32" CPPFLAGS="-m32" LDFLAGS="-m32" ./configure --target=i686-linux-gnu --prefix="$stage" --enable-png=no --enable-lcms1=no --enable-lcms2=no --enable-tiff=no
+            # Force 4.6
+            export CC=gcc-4.6
+            export CXX=g++-4.6
+
+            # Inhibit '--sysroot' nonsense
+            export CPPFLAGS=""
+
+            cmake -G"Unix Makefiles" \
+                -DCMAKE_INSTALL_PREFIX="$stage" \
+                -DBUILD_SHARED_LIBS:bool=off \
+                -DCMAKE_INSTALL_DEBUG_LIBRARIES=1 .
+            # From 1.4.0:
+            # CFLAGS="-m32" CPPFLAGS="-m32" LDFLAGS="-m32" ./configure --target=i686-linux-gnu --prefix="$stage" --enable-png=no --enable-lcms1=no --enable-lcms2=no --enable-tiff=no
             make
             make install
-
-            mv "$stage/include/openjpeg-$OPENJPEG_VERSION" "$stage/include/openjpeg"
+            # conditionally run unit tests
+            if [ "${DISABLE_UNIT_TESTS:-0}" = "0" ]; then
+                echo "No unit tests yet"
+            fi
 
             mv "$stage/lib" "$stage/release"
             mkdir -p "$stage/lib"
