@@ -6,6 +6,8 @@ cd "$(dirname "$0")"
 set -x
 # make errors fatal
 set -e
+# complain about unset env variables
+set -u
 
 OPENJPEG_VERSION="2.0.0"
 OPENJPEG_SOURCE_DIR="openjpeg"
@@ -15,13 +17,18 @@ if [ -z "$AUTOBUILD" ] ; then
 fi
 
 if [ "$OSTYPE" = "cygwin" ] ; then
-    export AUTOBUILD="$(cygpath -u $AUTOBUILD)"
+    autobuild="$(cygpath -u $AUTOBUILD)"
+else
+    autobuild="$AUTOBUILD"
 fi
 
 # load autobuild provided shell functions and variables
 set +x
-eval "$("$AUTOBUILD" source_environment)"
+eval "$("$autobuild" source_environment)"
 set -x
+
+# set LL_BUILD and friends
+set_build_variables convenience Release
 
 stage="$(pwd)/stage"
 
@@ -33,7 +40,8 @@ pushd "$OPENJPEG_SOURCE_DIR"
         windows*)
             load_vsvars
 
-            cmake . -G "$AUTOBUILD_WIN_CMAKE_GEN" -DCMAKE_INSTALL_PREFIX=$stage
+            cmake . -G "$AUTOBUILD_WIN_CMAKE_GEN" -DCMAKE_INSTALL_PREFIX=$stage \
+                    -DCMAKE_CXX_FLAGS="$LL_BUILD"
 
             build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "openjpeg"
             mkdir -p "$stage/lib/release"
@@ -42,9 +50,11 @@ pushd "$OPENJPEG_SOURCE_DIR"
             cp libopenjp2/openjpeg.h "$stage/include/openjp2"
         ;;
 
-        "darwin")
-            cmake . -GXcode -D'CMAKE_OSX_ARCHITECTURES:STRING=i386;ppc' -D'BUILD_SHARED_LIBS:bool=off' -D'BUILD_CODEC:bool=off' -DCMAKE_INSTALL_PREFIX=$stage
-	    xcodebuild -configuration Release -target openjpeg -project openjpeg.xcodeproj
+        darwin*)
+            cmake . -GXcode -D'CMAKE_OSX_ARCHITECTURES:STRING=$AUTOBUILD_CONFIGURE_ARCH' \
+                    -D'BUILD_SHARED_LIBS:bool=off' -D'BUILD_CODEC:bool=off' \
+                    -DCMAKE_INSTALL_PREFIX=$stage -DCMAKE_CXX_FLAGS="$LL_BUILD"
+            xcodebuild -configuration Release -target openjpeg -project openjpeg.xcodeproj
             xcodebuild -configuration Release -target install -project openjpeg.xcodeproj
             mkdir -p "$stage/lib/release"
             cp "$stage/lib/libopenjp2.a" "$stage/lib/release/libopenjp2.a"
@@ -52,7 +62,7 @@ pushd "$OPENJPEG_SOURCE_DIR"
             cp "$stage/include/openjp2/openjpeg.h" "$stage/include/openjp2"
         ;;
 
-        "linux")
+        linux*)
             # Force 4.6
             export CC=gcc-4.6
             export CXX=g++-4.6
@@ -63,7 +73,8 @@ pushd "$OPENJPEG_SOURCE_DIR"
             cmake -G"Unix Makefiles" \
                 -DCMAKE_INSTALL_PREFIX="$stage" \
                 -DBUILD_SHARED_LIBS:bool=off \
-                -DCMAKE_INSTALL_DEBUG_LIBRARIES=1 .
+                -DCMAKE_INSTALL_DEBUG_LIBRARIES=1 \
+                -DCMAKE_CXX_FLAGS="$LL_BUILD" .
             # From 1.4.0:
             # CFLAGS="-m32" CPPFLAGS="-m32" LDFLAGS="-m32" ./configure --target=i686-linux-gnu --prefix="$stage" --enable-png=no --enable-lcms1=no --enable-lcms2=no --enable-tiff=no
             make
