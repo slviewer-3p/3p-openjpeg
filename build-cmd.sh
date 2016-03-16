@@ -56,12 +56,12 @@ pushd "$OPENJPEG_SOURCE_DIR"
             cmake . -GXcode -D'CMAKE_OSX_ARCHITECTURES:STRING=$AUTOBUILD_CONFIGURE_ARCH' \
                     -D'BUILD_SHARED_LIBS:bool=off' -D'BUILD_CODEC:bool=off' \
                     -DCMAKE_INSTALL_PREFIX=$stage -DCMAKE_C_FLAGS="$LL_BUILD"
-            xcodebuild -configuration Release -target openjpeg -project openjpeg.xcodeproj
+            xcodebuild -configuration Release -target openjp2 -project openjpeg.xcodeproj
             xcodebuild -configuration Release -target install -project openjpeg.xcodeproj
             mkdir -p "$stage/lib/release"
             cp "$stage/lib/libopenjp2.a" "$stage/lib/release/libopenjp2.a"
-            mkdir -p "$stage/include/openjp2"
-            cp "$stage/include/openjp2/openjpeg.h" "$stage/include/openjp2"
+            mkdir -p "$stage/include/openjpeg"
+            cp "$stage/include/openjp2/openjpeg.h" "$stage/include/openjpeg"
         ;;
 
         linux*)
