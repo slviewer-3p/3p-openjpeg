@@ -9,8 +9,11 @@ set -e
 # complain about unset env variables
 set -u
 
-OPENJPEG_VERSION="2.0.0"
 OPENJPEG_SOURCE_DIR="openjpeg"
+#define OPENJPEG_VERSION "2.0.0"
+OPENJPEG_VERSION="$(awk '/OPENJPEG_VERSION/ { print $3 }' \
+                        "$OPENJPEG_SOURCE_DIR/src/lib/openjp2/openjpeg.h" | \
+                    tr -d '"')"
 
 if [ -z "$AUTOBUILD" ] ; then 
     fail
