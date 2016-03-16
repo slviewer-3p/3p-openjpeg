@@ -59,9 +59,13 @@ pushd "$OPENJPEG_SOURCE_DIR"
             xcodebuild -configuration Release -target openjp2 -project openjpeg.xcodeproj
             xcodebuild -configuration Release -target install -project openjpeg.xcodeproj
             mkdir -p "$stage/lib/release"
-            cp "$stage/lib/libopenjp2.a" "$stage/lib/release/libopenjp2.a"
             mkdir -p "$stage/include/openjpeg"
-            cp "$stage/include/openjp2/openjpeg.h" "$stage/include/openjpeg"
+            # As of openjpeg 2.0, build products are now installed into
+            # directories with version-stamped names. The actual pathname can
+            # be found in install_manifest.txt.
+            # For backwards compatibility, rename libopenjp2.a to libopenjpeg.a.
+            mv -v "$(grep '/libopenjp2.a$' install_manifest.txt)" "$stage/lib/release/libopenjpeg.a"
+            mv -v "$(grep '/openjpeg.h$' install_manifest.txt)" "$stage/include/openjpeg/"
         ;;
 
         linux*)
