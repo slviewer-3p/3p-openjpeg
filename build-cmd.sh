@@ -93,9 +93,14 @@ pushd "$OPENJPEG_SOURCE_DIR"
                 echo "No unit tests yet"
             fi
 
-            mv "$stage/lib" "$stage/release"
-            mkdir -p "$stage/lib"
-            mv "$stage/release" "$stage/lib"
+            mkdir -p "$stage/lib/release"
+            mkdir -p "$stage/include/openjpeg"
+            # As of openjpeg 2.0, build products are now installed into
+            # directories with version-stamped names. The actual pathname can
+            # be found in install_manifest.txt.
+            # For backwards compatibility, rename libopenjp2.a to libopenjpeg.a.
+            mv -v "$(grep '/libopenjp2.a$' install_manifest.txt)" "$stage/lib/release/libopenjpeg.a"
+            mv -v "$(grep '/openjpeg.h$' install_manifest.txt)" "$stage/include/openjpeg/"
         ;;
     esac
     mkdir -p "$stage/LICENSES"

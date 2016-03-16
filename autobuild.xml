@@ -84,7 +84,6 @@
           </map>
           <key>manifest</key>
           <array>
-            <string>lib/release/libopenjpeg*.so*</string>
             <string>lib/release/libopenjpeg.a</string>
           </array>
           <key>name</key>
