@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 cd "$(dirname "$0")"
 
 # turn on verbose debugging output for parabuild logs.
-set -x
+exec 4>&1; export BASH_XTRACEFD=4; set -x
 # make errors fatal
 set -e
 # complain about unset env variables
@@ -16,7 +16,7 @@ OPENJPEG_VERSION="$(awk '/OPENJPEG_VERSION/ { print $3 }' \
                     tr -d '"')"
 
 if [ -z "$AUTOBUILD" ] ; then 
-    fail
+    exit 1
 fi
 
 if [ "$OSTYPE" = "cygwin" ] ; then
@@ -25,15 +25,12 @@ else
     autobuild="$AUTOBUILD"
 fi
 
-# load autobuild provided shell functions and variables
-set +x
-eval "$("$autobuild" source_environment)"
-set -x
-
-# set LL_BUILD and friends
-set_build_variables convenience Release
-
 stage="$(pwd)/stage"
+
+# load autobuild provided shell functions and variables
+source_environment_tempfile="$stage/source_environment.sh"
+"$autobuild" source_environment > "$source_environment_tempfile"
+. "$source_environment_tempfile"
 
 build=${AUTOBUILD_BUILD_ID:=0}
 echo "${OPENJPEG_VERSION}.${build}" > "${stage}/VERSION.txt"
@@ -44,7 +41,7 @@ pushd "$OPENJPEG_SOURCE_DIR"
             load_vsvars
 
             cmake . -G "$AUTOBUILD_WIN_CMAKE_GEN" -DCMAKE_INSTALL_PREFIX=$stage \
-                    -DCMAKE_C_FLAGS="$LL_BUILD"
+                    -DCMAKE_C_FLAGS="$LL_BUILD_RELEASE"
 
             build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "openjp2"
             mkdir -p "$stage/lib/release"
@@ -58,7 +55,7 @@ pushd "$OPENJPEG_SOURCE_DIR"
         darwin*)
             cmake . -GXcode -D'CMAKE_OSX_ARCHITECTURES:STRING=$AUTOBUILD_CONFIGURE_ARCH' \
                     -D'BUILD_SHARED_LIBS:bool=off' -D'BUILD_CODEC:bool=off' \
-                    -DCMAKE_INSTALL_PREFIX=$stage -DCMAKE_C_FLAGS="$LL_BUILD"
+                    -DCMAKE_INSTALL_PREFIX=$stage -DCMAKE_C_FLAGS="$LL_BUILD_RELEASE"
             xcodebuild -configuration Release -target openjp2 -project openjpeg.xcodeproj
             xcodebuild -configuration Release -target install -project openjpeg.xcodeproj
             mkdir -p "$stage/lib/release"
@@ -83,7 +80,7 @@ pushd "$OPENJPEG_SOURCE_DIR"
                 -DCMAKE_INSTALL_PREFIX="$stage" \
                 -DBUILD_SHARED_LIBS:bool=off \
                 -DCMAKE_INSTALL_DEBUG_LIBRARIES=1 \
-                -DCMAKE_C_FLAGS="$LL_BUILD" .
+                -DCMAKE_C_FLAGS="$LL_BUILD_RELEASE" .
             # From 1.4.0:
             # CFLAGS="-m32" CPPFLAGS="-m32" LDFLAGS="-m32" ./configure --target=i686-linux-gnu --prefix="$stage" --enable-png=no --enable-lcms1=no --enable-lcms2=no --enable-tiff=no
             make
@@ -106,5 +103,3 @@ pushd "$OPENJPEG_SOURCE_DIR"
     mkdir -p "$stage/LICENSES"
     cp LICENSE "$stage/LICENSES/openjpeg.txt"
 popd
-
-pass
