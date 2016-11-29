@@ -11,9 +11,20 @@ set -u
 
 OPENJPEG_SOURCE_DIR="openjpeg"
 #define OPENJPEG_VERSION "2.0.0"
-OPENJPEG_VERSION="$(awk '/OPENJPEG_VERSION/ { print $3 }' \
-                        "$OPENJPEG_SOURCE_DIR/src/lib/openjp2/openjpeg.h" | \
-                    tr -d '"')"
+if true                         # pre-2.0
+then
+    openjpeg="openjpeg"
+    verfile="$openjpeg/CMakeLists.txt"
+    OPENJPEG_VERSION_MAJOR="$(sed -n -E '/^.*OPENJPEG_VERSION_MAJOR ([0-9]+)\)/s//\1/p' "$verfile")"
+    OPENJPEG_VERSION_MINOR="$(sed -n -E '/^.*OPENJPEG_VERSION_MINOR ([0-9]+)\)/s//\1/p' "$verfile")"
+    OPENJPEG_VERSION_BUILD="$(sed -n -E '/^.*OPENJPEG_VERSION_BUILD ([0-9]+)\)/s//\1/p' "$verfile")"
+    OPENJPEG_VERSION="$OPENJPEG_VERSION_MAJOR.$OPENJPEG_VERSION_MINOR.$OPENJPEG_VERSION_BUILD"
+else                            # openjpeg 2.0+
+    openjpeg="openjp2"
+    OPENJPEG_VERSION="$(awk '/OPENJPEG_VERSION/ { print $3 }' \
+                        "$OPENJPEG_SOURCE_DIR/src/lib/$openjpeg/openjpeg.h" | \
+                        tr -d '"')"
+fi
 
 if [ -z "$AUTOBUILD" ] ; then 
     exit 1
@@ -43,28 +54,28 @@ pushd "$OPENJPEG_SOURCE_DIR"
             cmake . -G "$AUTOBUILD_WIN_CMAKE_GEN" -DCMAKE_INSTALL_PREFIX=$stage \
                     -DCMAKE_C_FLAGS="$LL_BUILD_RELEASE"
 
-            build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "openjp2"
+            build_sln "OPENJPEG.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "$openjpeg"
             mkdir -p "$stage/lib/release"
 
-            cp bin/Release/openjp2{.dll,.lib} "$stage/lib/release"
+            cp bin/Release/$openjpeg{.dll,.lib} "$stage/lib/release"
             mkdir -p "$stage/include/openjpeg"
 
-            cp src/lib/openjp2/openjpeg.h "$stage/include/openjpeg/"
+            cp src/lib/$openjpeg/openjpeg.h "$stage/include/openjpeg/"
         ;;
 
         darwin*)
             cmake . -GXcode -D'CMAKE_OSX_ARCHITECTURES:STRING=$AUTOBUILD_CONFIGURE_ARCH' \
                     -D'BUILD_SHARED_LIBS:bool=off' -D'BUILD_CODEC:bool=off' \
                     -DCMAKE_INSTALL_PREFIX=$stage -DCMAKE_C_FLAGS="$LL_BUILD_RELEASE"
-            xcodebuild -configuration Release -target openjp2 -project openjpeg.xcodeproj
+            xcodebuild -configuration Release -target $openjpeg -project openjpeg.xcodeproj
             xcodebuild -configuration Release -target install -project openjpeg.xcodeproj
             mkdir -p "$stage/lib/release"
             mkdir -p "$stage/include/openjpeg"
             # As of openjpeg 2.0, build products are now installed into
             # directories with version-stamped names. The actual pathname can
             # be found in install_manifest.txt.
-            # For backwards compatibility, rename libopenjp2.a to libopenjpeg.a.
-            mv -v "$(grep '/libopenjp2.a$' install_manifest.txt)" "$stage/lib/release/libopenjpeg.a"
+            # For backwards compatibility, rename lib$openjpeg.a to libopenjpeg.a.
+            mv -v "$(grep "/lib$openjpeg.a$" install_manifest.txt)" "$stage/lib/release/libopenjpeg.a"
             mv -v "$(grep '/openjpeg.h$' install_manifest.txt)" "$stage/include/openjpeg/"
         ;;
 
@@ -95,8 +106,8 @@ pushd "$OPENJPEG_SOURCE_DIR"
             # As of openjpeg 2.0, build products are now installed into
             # directories with version-stamped names. The actual pathname can
             # be found in install_manifest.txt.
-            # For backwards compatibility, rename libopenjp2.a to libopenjpeg.a.
-            mv -v "$(grep '/libopenjp2.a$' install_manifest.txt)" "$stage/lib/release/libopenjpeg.a"
+            # For backwards compatibility, rename lib$openjpeg.a to libopenjpeg.a.
+            mv -v "$(grep "/lib$openjpeg.a$" install_manifest.txt)" "$stage/lib/release/libopenjpeg.a"
             mv -v "$(grep '/openjpeg.h$' install_manifest.txt)" "$stage/include/openjpeg/"
         ;;
     esac
