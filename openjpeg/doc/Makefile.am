@@ -47,3 +47,26 @@ uninstall-hook:
 	$(RM) libopenjpeg* )
 	@(cd $(doc_dir) && $(RM) * )
 	@rmdir $(doc_dir)
+	  $(LN_S) image_to_j2k.1 jpwl_image_to_j2k.1
+	cd $(DESTDIR)$(man1dir) && \
+	  rm -f jpwl_j2k_to_image.1 && \
+	  $(LN_S) j2k_to_image.1 jpwl_j2k_to_image.1
+	cd $(DESTDIR)$(man3dir) && \
+	  rm -f jpwl_libopenjpeg.3 && \
+	  $(LN_S) libopenjpeg.3 jpwl_libopenjpeg.3
+	@echo -e " (MAN)\t$(man1dir)/image_to_j2k.1" >> $(top_builddir)/report.txt
+	@echo -e " (LN)\t$(man1dir)/jpwl_image_to_j2k.1" >> $(top_builddir)/report.txt
+	@echo -e " (MAN)\t$(man1dir)/j2k_dump.1" >> $(top_builddir)/report.txt
+	@echo -e " (MAN)\t$(man1dir)/j2k_to_image.1" >> $(top_builddir)/report.txt
+	@echo -e " (LN)\t$(man1dir)//jpwl_j2k_to_image.1" >> $(top_builddir)/report.txt
+	@echo -e " (MAN)\t$(man3dir)/libopenjpeg.3" >> $(top_builddir)/report.txt
+	@echo -e " (LN)\t$(man3dir)/jpwl_libopenjpeg.3" >> $(top_builddir)/report.txt
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(man1dir)/jpwl_image_to_j2k.1
+	rm -f $(DESTDIR)$(man1dir)/jpwl_j2k_to_image.1
+	rm -f $(DESTDIR)$(man3dir)/jpwl_libopenjpeg.3
+
+EXTRA_DIST = \
+CMakeLists.txt \
+Doxyfile.dox
