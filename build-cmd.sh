@@ -60,7 +60,16 @@ pushd "$OPENJPEG_SOURCE_DIR"
             cp bin/Release/$openjpeg{.dll,.lib} "$stage/lib/release"
             mkdir -p "$stage/include/openjpeg"
 
-            cp src/lib/$openjpeg/openjpeg.h "$stage/include/openjpeg/"
+            if [ "$openjpeg" == "openjpeg" ]
+            then # openjpeg 1.x
+                 cp libopenjpeg/openjpeg.h "$stage/include/openjpeg/"
+            else # openjpeg 2.x
+                 # There are a whole bunch of header files in src/lib/openjp2,
+                 # some of which are #included by openjpeg.h. Copy all of
+                 # them? ... nah.
+                 cp src/lib/$openjpeg/{openjpeg,opj_stdint,opj_config}.h \
+                    "$stage/include/openjpeg/"
+            fi
         ;;
 
         darwin*)
