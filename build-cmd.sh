@@ -89,10 +89,6 @@ pushd "$OPENJPEG_SOURCE_DIR"
         ;;
 
         linux*)
-            # Force 4.6
-            export CC=gcc-4.6
-            export CXX=g++-4.6
-
             # Inhibit '--sysroot' nonsense
             export CPPFLAGS=""
 
